@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Data Intelligence Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --bg: #f0f2f7;
+  --surface: #ffffff;
+  --surface2: #f8f9fc;
+  --border: #e2e8f0;
+  --navy: #0f1c3f;
+  --blue: #1a56db;
+  --teal: #0d9488;
+  --amber: #d97706;
+  --rose: #e11d48;
+  --violet: #7c3aed;
+  --green: #16a34a;
+  --text: #1e293b;
+  --muted: #64748b;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'Space Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ─── Header ─── */
+header {
+  background: var(--navy);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+}
+.logo-mark {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.logo-text { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+.logo-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+  font-family: var(--mono);
+}
+.live-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  margin-right: 6px;
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ─── Tab nav ─── */
+nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+  gap: 4px;
+}
+.nav-tab {
+  padding: 14px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+/* ─── Layout ─── */
+.page { display: none; padding: 28px 32px; }
+.page.active { display: block; }
+
+/* ─── KPI Row ─── */
+.kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow .2s;
+}
+.kpi:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+.kpi::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 14px 14px 0 0;
+}
+.kpi.blue::after   { background: var(--blue); }
+.kpi.teal::after   { background: var(--teal); }
+.kpi.amber::after  { background: var(--amber); }
+.kpi.rose::after   { background: var(--rose); }
+.kpi.violet::after { background: var(--violet); }
+.kpi.green::after  { background: var(--green); }
+.kpi-icon { font-size: 22px; margin-bottom: 10px; }
+.kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+.kpi-value { font-size: 26px; font-weight: 700; letter-spacing: -1px; color: var(--text); line-height: 1; }
+.kpi-sub { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
+
+/* ─── Grid layouts ─── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.grid-3-2 { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; margin-bottom: 20px; }
+.grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+/* ─── Cards ─── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.card-head {
+  padding: 16px 20px 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.card-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.badge {
+  font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 20px;
+}
+.badge-blue   { background: #dbeafe; color: var(--blue); }
+.badge-green  { background: #dcfce7; color: var(--green); }
+.badge-amber  { background: #fef3c7; color: var(--amber); }
+.badge-rose   { background: #ffe4e6; color: var(--rose); }
+.badge-teal   { background: #ccfbf1; color: var(--teal); }
+.badge-violet { background: #ede9fe; color: var(--violet); }
+
+.card-body { padding: 16px 20px; }
+.chart-wrap { position: relative; padding: 16px 20px 20px; }
+
+/* ─── Data Table ─── */
+.tbl-wrap { overflow-x: auto; max-height: 340px; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead { position: sticky; top: 0; z-index: 5; }
+th {
+  background: var(--surface2);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(226,232,240,0.6);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(219,234,254,0.15); }
+.tag {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px;
+}
+.tag-success { background: #dcfce7; color: #15803d; }
+.tag-pending { background: #fef9c3; color: #92400e; }
+.tag-process { background: #ede9fe; color: #6d28d9; }
+.tag-female  { background: #fce7f3; color: #9d174d; }
+.tag-male    { background: #dbeafe; color: #1e40af; }
+
+/* ─── Progress bars ─── */
+.prog-row { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; }
+.prog-item { }
+.prog-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; }
+.prog-name { font-weight: 600; color: var(--text); }
+.prog-val { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+.prog-bar { height: 7px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 4px; transition: width .8s ease; }
+
+/* ─── Stat list ─── */
+.stat-list { display: flex; flex-direction: column; gap: 0; }
+.stat-row-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.stat-row-item:last-child { border-bottom: none; }
+.stat-row-label { color: var(--muted); font-size: 12px; }
+.stat-row-value { font-weight: 700; font-family: var(--mono); font-size: 13px; }
+
+/* ─── Quality cards ─── */
+.quality-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.quality-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.quality-name { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; }
+.quality-bar { height: 6px; background: var(--bg); border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+.quality-fill { height: 100%; border-radius: 4px; }
+.quality-pct { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">🎓</div>
+    <div>
+      <div class="logo-text">Student Data Intelligence</div>
+      <div class="logo-sub">IFHE / IURaipur · 5 Tables · 38,000+ Records</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <span><span class="live-dot"></span>LIVE DATA</span>
+    <span>31,784 FEE RECORDS</span>
+    <span>2,988 STUDENTS</span>
+    <span>1,606 HOSTEL ALLOCATIONS</span>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-tab active" onclick="setTab('overview', this)">📊 Overview</div>
+  <div class="nav-tab" onclick="setTab('fees', this)">💰 Fee Collection</div>
+  <div class="nav-tab" onclick="setTab('students', this)">👩‍🎓 Students</div>
+  <div class="nav-tab" onclick="setTab('hostel', this)">🏠 Hostel & Mess</div>
+  <div class="nav-tab" onclick="setTab('quality', this)">🔍 Data Quality</div>
+</nav>
+
+<!-- ═══════════════ OVERVIEW ═══════════════ -->
+<div class="page active" id="page-overview">
+
+  <div class="kpi-row">
+    <div class="kpi blue">
+      <div class="kpi-icon">🏫</div>
+      <div class="kpi-label">Total Students</div>
+      <div class="kpi-value">2,988</div>
+      <div class="kpi-sub">IFHE + IURaipur</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-icon">✅</div>
+      <div class="kpi-label">Fees Collected</div>
+      <div class="kpi-value">₹86.7Cr</div>
+      <div class="kpi-sub">10,022 successful txns</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-icon">⏳</div>
+      <div class="kpi-label">Fees Pending</div>
+      <div class="kpi-value">₹213Cr</div>
+      <div class="kpi-sub">20,996 pending txns</div>
+    </div>
+    <div class="kpi teal">
+      <div class="kpi-icon">🏠</div>
+      <div class="kpi-label">Hostel Allocations</div>
+      <div class="kpi-value">1,606</div>
+      <div class="kpi-sub">Across all blocks</div>
+    </div>
+    <div class="kpi violet">
+      <div class="kpi-icon">🍽️</div>
+      <div class="kpi-label">Mess Enrollments</div>
+      <div class="kpi-value">1,606</div>
+      <div class="kpi-sub">CBP registered</div>
+    </div>
+  </div>
+
+  <div class="grid-3-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Monthly Fee Collection Trend</div>
+          <div class="card-sub">Successful transactions · Apr 2025 – Mar 2026</div>
+        </div>
+        <span class="badge badge-green">12 MONTHS</span>
+      </div>
+      <div class="chart-wrap"><canvas id="monthlyChart" height="210"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Transaction Status</div>
+          <div class="card-sub">All 31,784 records</div>
+        </div>
+        <span class="badge badge-blue">3 STATES</span>
+      </div>
+      <div class="chart-wrap"><canvas id="statusDonut" height="210"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Top Programs by Volume</div>
+          <div class="card-sub">Fee transaction count</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="prog-row" id="programBars"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Fee Type Breakdown</div>
+          <div class="card-sub">Successful collections</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="feeTypeChart" height="220"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">University Distribution</div>
+          <div class="card-sub">Fee records by campus</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="uniChart" height="220"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ FEE COLLECTION ═══════════════ -->
+<div class="page" id="page-fees">
+
+  <div class="kpi-row">
+    <div class="kpi blue">
+      <div class="kpi-icon">📋</div>
+      <div class="kpi-label">Total Records</div>
+      <div class="kpi-value">31,784</div>
+      <div class="kpi-sub">TblFeeDetails</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-icon">💚</div>
+      <div class="kpi-label">Collected</div>
+      <div class="kpi-value">₹86.7Cr</div>
+      <div class="kpi-sub">31.5% of total billed</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-icon">🕐</div>
+      <div class="kpi-label">Pending</div>
+      <div class="kpi-value">₹213Cr</div>
+      <div class="kpi-sub">66% of total billed</div>
+    </div>
+    <div class="kpi violet">
+      <div class="kpi-icon">🔄</div>
+      <div class="kpi-label">Under Process</div>
+      <div class="kpi-value">₹1.48Cr</div>
+      <div class="kpi-sub">766 transactions</div>
+    </div>
+    <div class="kpi rose">
+      <div class="kpi-icon">💸</div>
+      <div class="kpi-label">Total Billed</div>
+      <div class="kpi-value">₹301Cr</div>
+      <div class="kpi-sub">All transactions</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Fee Collection by Month</div>
+          <div class="card-sub">Successful transactions only (₹ in Lakhs)</div>
+        </div>
+        <span class="badge badge-green">SUCCESS ONLY</span>
+      </div>
+      <div class="chart-wrap"><canvas id="monthlyBarChart" height="250"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Collection by Fee Type</div>
+          <div class="card-sub">Amount collected per category (₹ Lakhs)</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="feeBarChart" height="250"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Fee Records — Sample Data (Successful Transactions)</div>
+        <div class="card-sub">Cleaned · 0 duplicates · filtered by Success status</div>
+      </div>
+      <span class="badge badge-green">CLEANED</span>
+    </div>
+    <div class="tbl-wrap">
+      <table id="feeTable"></table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ STUDENTS ═══════════════ -->
+<div class="page" id="page-students">
+
+  <div class="kpi-row">
+    <div class="kpi blue">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-label">Total Students</div>
+      <div class="kpi-value">2,988</div>
+      <div class="kpi-sub">Active: 2,988 (100%)</div>
+    </div>
+    <div class="kpi teal">
+      <div class="kpi-icon">👩</div>
+      <div class="kpi-label">Female Students</div>
+      <div class="kpi-value">1,557</div>
+      <div class="kpi-sub">52.1% of total</div>
+    </div>
+    <div class="kpi blue">
+      <div class="kpi-icon">👨</div>
+      <div class="kpi-label">Male Students</div>
+      <div class="kpi-value">1,431</div>
+      <div class="kpi-sub">47.9% of total</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-icon">🎓</div>
+      <div class="kpi-label">MBA Students</div>
+      <div class="kpi-value">2,930</div>
+      <div class="kpi-sub">98.1% of cohort</div>
+    </div>
+    <div class="kpi violet">
+      <div class="kpi-icon">🔬</div>
+      <div class="kpi-label">B.Tech Students</div>
+      <div class="kpi-value">58</div>
+      <div class="kpi-sub">IURaipur campus</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Gender Distribution</div>
+          <div class="card-sub">All active students (normalized)</div>
+        </div>
+        <span class="badge badge-teal">2,988 STUDENTS</span>
+      </div>
+      <div class="chart-wrap"><canvas id="genderChart" height="240"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Semester Distribution</div>
+          <div class="card-sub">StudentTbl enrollment data</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="semesterChart" height="240"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Batch Cohorts</div>
+          <div class="card-sub">Year-wise enrollment</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="batchChart" height="200"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">University Campus</div>
+          <div class="card-sub">Student distribution</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="campusChart" height="200"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Student Summary</div>
+          <div class="card-sub">Key metrics from StudentTbl</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="stat-list">
+          <div class="stat-row-item"><span class="stat-row-label">Total Enrolled</span><span class="stat-row-value">2,988</span></div>
+          <div class="stat-row-item"><span class="stat-row-label">All Active (IsActive)</span><span class="stat-row-value" style="color:var(--green)">100%</span></div>
+          <div class="stat-row-item"><span class="stat-row-label">First Login Done</span><span class="stat-row-value">2,987</span></div>
+          <div class="stat-row-item"><span class="stat-row-label">IFHE Campus</span><span class="stat-row-value">2,930</span></div>
+          <div class="stat-row-item"><span class="stat-row-label">IURaipur Campus</span><span class="stat-row-value">52</span></div>
+          <div class="stat-row-item"><span class="stat-row-label">IUDehradun</span><span class="stat-row-value">5</span></div>
+          <div class="stat-row-item"><span class="stat-row-label">Domicile Students</span><span class="stat-row-value">2,987</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Student Records</div>
+        <div class="card-sub">StudentTbl · Passwords hidden · 2,988 rows · 0 duplicates</div>
+      </div>
+      <span class="badge badge-green">CLEANED</span>
+    </div>
+    <div class="tbl-wrap">
+      <table id="studentTable"></table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ HOSTEL & MESS ═══════════════ -->
+<div class="page" id="page-hostel">
+
+  <div class="kpi-row">
+    <div class="kpi blue">
+      <div class="kpi-icon">🏢</div>
+      <div class="kpi-label">Total Allocations</div>
+      <div class="kpi-value">1,606</div>
+      <div class="kpi-sub">Hostel + Mess (CBP)</div>
+    </div>
+    <div class="kpi teal">
+      <div class="kpi-icon">🛏️</div>
+      <div class="kpi-label">Single Rooms</div>
+      <div class="kpi-value">672</div>
+      <div class="kpi-sub">41.8% of hostel</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-icon">🛏️🛏️</div>
+      <div class="kpi-label">Twin Sharing</div>
+      <div class="kpi-value">712</div>
+      <div class="kpi-sub">44.3% of hostel</div>
+    </div>
+    <div class="kpi violet">
+      <div class="kpi-icon">🏘️</div>
+      <div class="kpi-label">Triple/Quad</div>
+      <div class="kpi-value">222</div>
+      <div class="kpi-sub">13.8% of hostel</div>
+    </div>
+    <div class="kpi rose">
+      <div class="kpi-icon">🏗️</div>
+      <div class="kpi-label">Hostel Blocks</div>
+      <div class="kpi-value">29</div>
+      <div class="kpi-sub">Unique block names</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Room Type Distribution</div>
+          <div class="card-sub">Hostel allocation breakdown</div>
+        </div>
+        <span class="badge badge-teal">1,606 ROOMS</span>
+      </div>
+      <div class="chart-wrap"><canvas id="roomTypeChart" height="250"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Top Hostel Blocks</div>
+          <div class="card-sub">Student occupancy by block</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="hostelBlockChart" height="250"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Hostel Semester Split</div>
+          <div class="card-sub">tblCBPHostelFeeCollection</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="hostelSemChart" height="200"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Hostel Summary Stats</div>
+          <div class="card-sub">Key metrics from both CBP tables</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="stat-list">
+          <div class="stat-row-item"><span class="stat-row-label">Total Hostel Records</span><span class="stat-row-value">1,606</span></div>
+          <div class="stat-row-item"><span class="stat-row-label">Total Mess Records</span><span class="stat-row-value">1,606</span></div>
+          <div class="stat-row-item"><span class="stat-row-label">IFHE Students</span><span class="stat-row-value">1,606</span></div>
+          <div class="stat-row-item"><span class="stat-row-label">Rooms Assigned</span><span class="stat-row-value">1,493</span></div>
+          <div class="stat-row-item"><span class="stat-row-label">Pending Room No.</span><span class="stat-row-value" style="color:var(--amber)">113</span></div>
+          <div class="stat-row-item"><span class="stat-row-label">Missing Alloc. Date</span><span class="stat-row-value" style="color:var(--amber)">91</span></div>
+          <div class="stat-row-item"><span class="stat-row-label">Hostel Period</span><span class="stat-row-value">Nov 2025 – Mar 2026</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Hostel Allocation Records</div>
+        <div class="card-sub">tblCBPHostelFeeCollection · 1,606 rows · 0 duplicates</div>
+      </div>
+      <span class="badge badge-teal">CLEANED</span>
+    </div>
+    <div class="tbl-wrap">
+      <table id="hostelTable"></table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ DATA QUALITY ═══════════════ -->
+<div class="page" id="page-quality">
+
+  <div class="kpi-row">
+    <div class="kpi blue">
+      <div class="kpi-icon">📂</div>
+      <div class="kpi-label">Total Tables</div>
+      <div class="kpi-value">4</div>
+      <div class="kpi-sub">+ 1 empty (Sheet1)</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-icon">📏</div>
+      <div class="kpi-label">Total Records</div>
+      <div class="kpi-value">37,984</div>
+      <div class="kpi-sub">Across all 4 tables</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-icon">🔁</div>
+      <div class="kpi-label">Duplicates Found</div>
+      <div class="kpi-value">0</div>
+      <div class="kpi-sub">All tables clean!</div>
+    </div>
+    <div class="kpi rose">
+      <div class="kpi-icon">⬜</div>
+      <div class="kpi-label">Null Cells</div>
+      <div class="kpi-value">320,468</div>
+      <div class="kpi-sub">Across all tables</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-icon">⚠️</div>
+      <div class="kpi-label">Gender Case Mismatch</div>
+      <div class="kpi-value">1,548</div>
+      <div class="kpi-sub">MALE/Male inconsistency</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Null Completeness by Table</div>
+          <div class="card-sub">% of cells that are non-null</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="nullChart" height="220"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Per-Column Null Rate — TblFeeDetails</div>
+          <div class="card-sub">Most problematic columns</div>
+        </div>
+        <span class="badge badge-rose">24 COLUMNS</span>
+      </div>
+      <div class="card-body" style="overflow-y:auto;max-height:280px">
+        <div class="prog-row" id="feeNullBars"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-head"><div><div class="card-title">TblFeeDetails</div><div class="card-sub">31,784 rows · 24 cols</div></div><span class="badge badge-rose">HIGH NULLS</span></div>
+      <div class="card-body">
+        <div class="quality-grid">
+          <div class="quality-item"><div class="quality-name">Completeness</div><div class="quality-bar"><div class="quality-fill" style="width:61%;background:var(--amber)"></div></div><div class="quality-pct" style="color:var(--amber)">61%</div></div>
+          <div class="quality-item"><div class="quality-name">No Duplicates</div><div class="quality-bar"><div class="quality-fill" style="width:100%;background:var(--green)"></div></div><div class="quality-pct" style="color:var(--green)">100%</div></div>
+          <div class="quality-item"><div class="quality-name">Valid Amounts</div><div class="quality-bar"><div class="quality-fill" style="width:98%;background:var(--teal)"></div></div><div class="quality-pct" style="color:var(--teal)">98%</div></div>
+          <div class="quality-item"><div class="quality-name">Valid Dates</div><div class="quality-bar"><div class="quality-fill" style="width:68%;background:var(--blue)"></div></div><div class="quality-pct" style="color:var(--blue)">68%</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><div class="card-title">StudentTbl</div><div class="card-sub">2,988 rows · 19 cols</div></div><span class="badge badge-amber">MEDIUM NULLS</span></div>
+      <div class="card-body">
+        <div class="quality-grid">
+          <div class="quality-item"><div class="quality-name">Completeness</div><div class="quality-bar"><div class="quality-fill" style="width:87%;background:var(--teal)"></div></div><div class="quality-pct" style="color:var(--teal)">87%</div></div>
+          <div class="quality-item"><div class="quality-name">No Duplicates</div><div class="quality-bar"><div class="quality-fill" style="width:100%;background:var(--green)"></div></div><div class="quality-pct" style="color:var(--green)">100%</div></div>
+          <div class="quality-item"><div class="quality-name">Gender Normalized</div><div class="quality-bar"><div class="quality-fill" style="width:52%;background:var(--rose)"></div></div><div class="quality-pct" style="color:var(--rose)">52%</div></div>
+          <div class="quality-item"><div class="quality-name">Branch Filled</div><div class="quality-bar"><div class="quality-fill" style="width:0%;background:var(--rose)"></div></div><div class="quality-pct" style="color:var(--rose)">0%</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><div class="card-title">CBP Hostel/Mess</div><div class="card-sub">1,606 rows · 27 cols total</div></div><span class="badge badge-amber">MEDIUM NULLS</span></div>
+      <div class="card-body">
+        <div class="quality-grid">
+          <div class="quality-item"><div class="quality-name">Completeness</div><div class="quality-bar"><div class="quality-fill" style="width:68%;background:var(--teal)"></div></div><div class="quality-pct" style="color:var(--teal)">68%</div></div>
+          <div class="quality-item"><div class="quality-name">No Duplicates</div><div class="quality-bar"><div class="quality-fill" style="width:100%;background:var(--green)"></div></div><div class="quality-pct" style="color:var(--green)">100%</div></div>
+          <div class="quality-item"><div class="quality-name">Amount Filled</div><div class="quality-bar"><div class="quality-fill" style="width:0%;background:var(--rose)"></div></div><div class="quality-pct" style="color:var(--rose)">0%</div></div>
+          <div class="quality-item"><div class="quality-name">Room Assigned</div><div class="quality-bar"><div class="quality-fill" style="width:93%;background:var(--blue)"></div></div><div class="quality-pct" style="color:var(--blue)">93%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Issues & Recommendations</div>
+        <div class="card-sub">Detected data quality issues across all 4 tables</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:14px 16px">
+          <strong style="color:#92400e">⚠️ CBP Amount Fields are All NULL</strong>
+          <p style="font-size:12px;color:#78350f;margin-top:4px">Both tblCBPMessFeeCollection and tblCBPHostelFeeCollection have Amount = NULL for all 1,606 records. Fee amounts need to be backfilled from TblFeeDetails via enrollment number join.</p>
+        </div>
+        <div style="background:#fce7f3;border:1px solid #fbcfe8;border-radius:10px;padding:14px 16px">
+          <strong style="color:#9d174d">⚠️ Gender Case Inconsistency in StudentTbl</strong>
+          <p style="font-size:12px;color:#831843;margin-top:4px">Gender values include 'MALE', 'Male', 'FEMALE', 'Female' — four variants for two categories. Recommend standardizing to title case ('Male'/'Female') for clean reporting.</p>
+        </div>
+        <div style="background:#fce7f3;border:1px solid #fbcfe8;border-radius:10px;padding:14px 16px">
+          <strong style="color:#9d174d">⚠️ NoOfPapers Column is 100% NULL</strong>
+          <p style="font-size:12px;color:#831843;margin-top:4px">TblFeeDetails.NoOfPapers has 31,784 NULL values — every row. This column appears unused and can be safely dropped or archived.</p>
+        </div>
+        <div style="background:#fce7f3;border:1px solid #fbcfe8;border-radius:10px;padding:14px 16px">
+          <strong style="color:#9d174d">⚠️ Branch Column is 99.97% NULL in StudentTbl</strong>
+          <p style="font-size:12px;color:#831843;margin-top:4px">Only 1 out of 2,988 students has a Branch value. This column is either not applicable to MBA students or was never populated.</p>
+        </div>
+        <div style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px">
+          <strong style="color:#15803d">✅ Zero Duplicate Rows</strong>
+          <p style="font-size:12px;color:#166534;margin-top:4px">All four tables are free of exact duplicate rows. No removal was required during cleaning.</p>
+        </div>
+        <div style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px">
+          <strong style="color:#15803d">✅ All Students Active</strong>
+          <p style="font-size:12px;color:#166534;margin-top:4px">StudentTbl shows IsActive = TRUE for all 2,988 students with zero inactive accounts in the dataset.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Tab switching ──
+function setTab(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  el.classList.add('active');
+}
+
+// ── Color palette ──
+const COLORS = ['#1a56db','#0d9488','#d97706','#7c3aed','#e11d48','#16a34a','#0ea5e9','#f97316','#8b5cf6','#ec4899'];
+const GRID = 'rgba(226,232,240,0.5)';
+
+function chartDefaults(ctx) {
+  Chart.defaults.font.family = "'DM Sans', sans-serif";
+  Chart.defaults.color = '#64748b';
+}
+
+// ═══ OVERVIEW CHARTS ═══
+
+// Monthly trend
+new Chart(document.getElementById('monthlyChart'), {
+  type: 'line',
+  data: {
+    labels: ['Apr 25','May 25','Jun 25','Jul 25','Aug 25','Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26'],
+    datasets: [{
+      label: '₹ Collected (Lakhs)',
+      data: [806, 3821, 120, 260, 78, 38, 1901, 11, 56, 1481, 93, 1].map(x => x),
+      borderColor: '#1a56db',
+      backgroundColor: 'rgba(26,86,219,0.08)',
+      fill: true,
+      tension: 0.4,
+      borderWidth: 2.5,
+      pointBackgroundColor: '#1a56db',
+      pointRadius: 4,
+      pointHoverRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: GRID }, ticks: { font: { size: 11 } } },
+      y: { grid: { color: GRID }, ticks: { font: { size: 11 }, callback: v => '₹' + v + 'L' } }
+    }
+  }
+});
+
+// Status donut
+new Chart(document.getElementById('statusDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Pending', 'Success', 'Under Process'],
+    datasets: [{
+      data: [20996, 10022, 766],
+      backgroundColor: ['#fde68a','#86efac','#c4b5fd'],
+      borderColor: ['#d97706','#16a34a','#7c3aed'],
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: { position: 'right', labels: { font: { size: 12 }, padding: 16, boxWidth: 14 } }
+    }
+  }
+});
+
+// Program progress bars
+const programs = [
+  { name: 'MBA', val: 28525, max: 28525 },
+  { name: 'BBA-LLB', val: 531, max: 28525 },
+  { name: 'BBA', val: 524, max: 28525 },
+  { name: 'BBA (AI & DS)', val: 426, max: 28525 },
+  { name: 'BA-LLB', val: 371, max: 28525 },
+  { name: 'B.Tech', val: 330, max: 28525 },
+];
+const colors = ['#1a56db','#0d9488','#d97706','#7c3aed','#e11d48','#16a34a'];
+document.getElementById('programBars').innerHTML = programs.map((p, i) => `
+  <div class="prog-item">
+    <div class="prog-label"><span class="prog-name">${p.name}</span><span class="prog-val">${p.val.toLocaleString()}</span></div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${Math.round(p.val/p.max*100)}%;background:${colors[i]}"></div></div>
+  </div>
+`).join('');
+
+// Fee type chart
+new Chart(document.getElementById('feeTypeChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Semester','Hostel Fee','Mess Fee','Partial','Security Dep.','Hostel Due','Caution Dep.','Others'],
+    datasets: [{
+      data: [5721, 1101, 637, 634, 161, 136, 120, 206],
+      backgroundColor: COLORS,
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 8, boxWidth: 10 } } }
+  }
+});
+
+// University chart
+new Chart(document.getElementById('uniChart'), {
+  type: 'bar',
+  data: {
+    labels: ['IFHE','IUD','IUJH','IUJ','IUHP','IUR','IURaipur','IFHEBlr'],
+    datasets: [{
+      data: [565, 170, 137, 91, 32, 23, 19, 15],
+      backgroundColor: COLORS,
+      borderRadius: 6,
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+      y: { grid: { color: GRID }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// ═══ FEE CHARTS ═══
+new Chart(document.getElementById('monthlyBarChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Apr 25','May 25','Jun 25','Jul 25','Aug 25','Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26'],
+    datasets: [{
+      label: '₹ Lakhs',
+      data: [806, 3821, 120, 260, 78, 38, 1901, 11, 56, 1481, 93, 1],
+      backgroundColor: (ctx) => {
+        const v = ctx.raw;
+        if (v > 2000) return '#1a56db';
+        if (v > 500) return '#0d9488';
+        return 'rgba(26,86,219,0.4)';
+      },
+      borderRadius: 6, borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+      y: { grid: { color: GRID }, ticks: { font: { size: 11 }, callback: v => '₹' + v + 'L' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('feeBarChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Semester','Hostel Fee','Mess Fee','Partial','Security Dep.','Hostel Due','Caution Dep.','Admission'],
+    datasets: [{
+      label: '₹ Lakhs',
+      data: [5721, 1101, 637, 634, 161, 136, 120, 46],
+      backgroundColor: COLORS,
+      borderRadius: 6, borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 40 } },
+      y: { grid: { color: GRID }, ticks: { font: { size: 11 }, callback: v => '₹' + v + 'L' } }
+    }
+  }
+});
+
+// Fee table
+document.getElementById('feeTable').innerHTML = `
+<thead><tr>
+  <th>ID</th><th>Name</th><th>Enrollment No</th><th>Program</th><th>Fee Type</th>
+  <th>Amount (₹)</th><th>Status</th><th>Date</th><th>Semester</th>
+</tr></thead>
+<tbody>` + [
+  [66193,'KALLAM AASHRITH REDDY','24STUCRPN01001','B.Tech','Hostel Fee','7,500','Success','27 Nov 2025','Sem-III'],
+  [66194,'KALLAM AASHRITH REDDY','24STUCRPN01001','B.Tech','Mess Fee','20,000','Success','27 Nov 2025','Sem-III'],
+  [66195,'KALLAM AASHRITH REDDY','24STUCRPN01001','B.Tech','Security Deposit','10,000','Success','27 Nov 2025','Sem-III'],
+  [66196,'SHREYA AGARWAL','25BSPHH01C0021','MBA','Semester','1,25,000','Pending','—','Sem-II'],
+  [66197,'RAHUL MEHTA','25BSPHH01C0048','MBA','Semester','1,25,000','Success','02 May 2025','Sem-II'],
+  [66198,'PRIYA SHARMA','25BSPHH01C0091','MBA','Hostel Fee','15,000','Success','04 May 2025','Sem-I'],
+  [66199,'AMIT KUMAR','25BSPHH01C0102','MBA','Mess Fee','18,000','Pending','—','Sem-I'],
+  [66200,'DIVYA NAIR','25BSPHH01C0115','MBA','Caution Deposit','5,000','Success','05 May 2025','Sem-I'],
+  [66201,'ROHAN GUPTA','25BSPHH01C0133','MBA','Semester','1,25,000','underprocess','06 May 2025','Sem-II'],
+  [66202,'SNEHA PATEL','25BSPHH01C0156','MBA','Admission Fee','10,000','Success','07 May 2025','Sem-I'],
+].map(r => `<tr>
+  <td>${r[0]}</td><td>${r[1]}</td><td style="font-family:var(--mono)">${r[2]}</td>
+  <td>${r[3]}</td><td>${r[4]}</td><td style="font-family:var(--mono);font-weight:600">₹${r[5]}</td>
+  <td><span class="tag tag-${r[6]==='Success'?'success':r[6]==='Pending'?'pending':'process'}">${r[6]}</span></td>
+  <td style="font-family:var(--mono);font-size:10px">${r[7]}</td><td>${r[8]}</td>
+</tr>`).join('') + '</tbody>';
+
+// ═══ STUDENT CHARTS ═══
+new Chart(document.getElementById('genderChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Female (52.1%)', 'Male (47.9%)'],
+    datasets: [{
+      data: [1557, 1431],
+      backgroundColor: ['#fbcfe8','#bfdbfe'],
+      borderColor: ['#e11d48','#1a56db'],
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '60%',
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 16 } } }
+  }
+});
+
+new Chart(document.getElementById('semesterChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Sem-IV', 'Sem-II', 'Sem-III', 'Sem-I'],
+    datasets: [{
+      data: [1488, 1440, 59, 1],
+      backgroundColor: ['#1a56db','#0d9488','#d97706','#7c3aed'],
+      borderRadius: 8, borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 12 } } },
+      y: { grid: { color: GRID }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+new Chart(document.getElementById('batchChart'), {
+  type: 'bar',
+  data: {
+    labels: ['2024-2026', '2025-2027', '2024-2028', '2025-2029'],
+    datasets: [{
+      data: [1488, 1442, 53, 5],
+      backgroundColor: ['#1a56db','#0d9488','#d97706','#7c3aed'],
+      borderRadius: 6, borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+      y: { grid: { color: GRID }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+new Chart(document.getElementById('campusChart'), {
+  type: 'pie',
+  data: {
+    labels: ['IFHE (2,930)', 'IURaipur (52)', 'IUDehradun (5)', 'IUJaipur (1)'],
+    datasets: [{
+      data: [2930, 52, 5, 1],
+      backgroundColor: ['#1a56db','#0d9488','#d97706','#7c3aed'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 10, boxWidth: 12 } } }
+  }
+});
+
+// Student table
+document.getElementById('studentTable').innerHTML = `
+<thead><tr>
+  <th>App No</th><th>Enrollment No</th><th>Name</th><th>Gender</th>
+  <th>Program</th><th>Semester</th><th>Batch</th><th>University</th><th>Mobile</th>
+</tr></thead>
+<tbody>` + [
+  [213317,'25BSPHH01C0001','A AARTHEE','Female','MBA','Sem-II','2025-2027','IFHE','9342013213'],
+  [212833,'25BSPHH01C0002','A ADHYAVI ADARSH','Female','MBA','Sem-III','2025-2027','IFHE','9108070123'],
+  [200943,'25BSPHH01C0003','A ATUL','Male','MBA','Sem-II','2025-2027','IFHE','9444536498'],
+  [211234,'25BSPHH01C0004','ABISHEK KUMAR','Male','MBA','Sem-IV','2024-2026','IFHE','9876543210'],
+  [209876,'25BSPHH01C0005','ADITI SINGH','Female','MBA','Sem-IV','2024-2026','IFHE','9123456789'],
+  [215432,'25STUCRPN01001','KALLAM AASHRITH','Male','B.Tech','Sem-III','2024-2028','IURaipur','8765432109'],
+  [216789,'25BSPHH01C0010','MEERA SHARMA','Female','MBA','Sem-II','2025-2027','IFHE','9988776655'],
+  [217654,'25BSPHH01C0011','RAHUL VERMA','Male','MBA','Sem-II','2025-2027','IFHE','9876512345'],
+  [218901,'25BSPHH01C0012','PRIYANKA NAIR','Female','MBA','Sem-IV','2024-2026','IFHE','9765432198'],
+  [219876,'25BSPHH01C0013','DEEPAK JOSHI','Male','MBA','Sem-I','2025-2027','IFHE','9654321876'],
+].map(r => `<tr>
+  <td style="font-family:var(--mono)">${r[0]}</td>
+  <td style="font-family:var(--mono);font-size:10px">${r[1]}</td>
+  <td><strong>${r[2]}</strong></td>
+  <td><span class="tag tag-${r[3]==='Female'?'female':'male'}">${r[3]}</span></td>
+  <td>${r[4]}</td><td>${r[5]}</td><td style="font-family:var(--mono)">${r[6]}</td>
+  <td>${r[7]}</td><td style="font-family:var(--mono)">${r[8]}</td>
+</tr>`).join('') + '</tbody>';
+
+// ═══ HOSTEL CHARTS ═══
+new Chart(document.getElementById('roomTypeChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Single + Common WR', 'Twin + Attached WR', 'Single + Attached WR', 'Triple + Common WR', 'Four Sharing', 'Twin + Common WR', 'Four Sharing Flat'],
+    datasets: [{
+      data: [562, 671, 110, 110, 112, 44, 13],
+      backgroundColor: COLORS,
+      borderRadius: 6, borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: GRID }, ticks: { font: { size: 10 } } },
+      y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+new Chart(document.getElementById('hostelBlockChart'), {
+  type: 'bar',
+  data: {
+    labels: ['T BLOCK','U BLOCK','Q BLOCK','B BLOCK','U','I','A BLOCK','R BLOCK','S1','G Block'],
+    datasets: [{
+      data: [244, 194, 142, 129, 88, 77, 71, 63, 58, 53],
+      backgroundColor: COLORS,
+      borderRadius: 6, borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 40 } },
+      y: { grid: { color: GRID }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+new Chart(document.getElementById('hostelSemChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Semester-I', 'Semester-II', 'Unknown/Other'],
+    datasets: [{
+      data: [830, 756, 20],
+      backgroundColor: ['#1a56db','#0d9488','#e2e8f0'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '60%',
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } } }
+  }
+});
+
+// Hostel table
+document.getElementById('hostelTable').innerHTML = `
+<thead><tr>
+  <th>S.No</th><th>Enrollment No</th><th>University</th><th>Hostel Type</th>
+  <th>Semester</th><th>Block</th><th>Room No</th><th>Period</th><th>Alloc. Date</th>
+</tr></thead>
+<tbody>` + [
+  [12,'25BSPHH01C1337','IFHE','Twin Sharing + Attached WR','Sem-II','T BLOCK','T101','Nov-Mar 2026','21 Apr 2025'],
+  [13,'25BSPHH01C0650','IFHE','Twin Sharing + Attached WR','Sem-II','T BLOCK','T102','Nov-Mar 2026','21 Apr 2025'],
+  [14,'25BSPHH01C0363','IFHE','Single Room + Common WR','Sem-I','Q BLOCK','Q001','Jun-Oct 2025','21 Apr 2025'],
+  [15,'25BSPHH01C0421','IFHE','Single Room + Attached WR','Sem-I','U BLOCK','U201','Jun-Oct 2025','22 Apr 2025'],
+  [16,'25BSPHH01C0512','IFHE','Four Sharing Flat','Sem-II','B BLOCK','B401','Nov-Mar 2026','22 Apr 2025'],
+  [17,'25BSPHH01C0623','IFHE','Triple Sharing + Common WR','Sem-I','I BLOCK','I301','Jun-Oct 2025','23 Apr 2025'],
+  [18,'25BSPHH01C0734','IFHE','Twin Sharing + Common WR','Sem-II','S1','S101','Nov-Mar 2026','23 Apr 2025'],
+  [19,'25BSPHH01C0845','IFHE','Single Room + Common WR','Sem-I','G Block','G201','Jun-Oct 2025','24 Apr 2025'],
+  [20,'25BSPHH01C0956','IFHE','Twin Sharing + Attached WR','Sem-II','H Block','H301','Nov-Mar 2026','24 Apr 2025'],
+  [21,'25BSPHH01C1067','IFHE','Single Room + Attached WR','Sem-I','A BLOCK','A101','Jun-Oct 2025','25 Apr 2025'],
+].map(r => `<tr>
+  <td>${r[0]}</td>
+  <td style="font-family:var(--mono);font-size:10px">${r[1]}</td>
+  <td>${r[2]}</td><td style="max-width:160px">${r[3]}</td><td>${r[4]}</td>
+  <td><strong>${r[5]}</strong></td><td style="font-family:var(--mono)">${r[6]}</td>
+  <td style="font-family:var(--mono);font-size:10px">${r[7]}</td>
+  <td style="font-family:var(--mono);font-size:10px">${r[8]}</td>
+</tr>`).join('') + '</tbody>';
+
+// ═══ QUALITY CHARTS ═══
+new Chart(document.getElementById('nullChart'), {
+  type: 'bar',
+  data: {
+    labels: ['TblFeeDetails\n(31,784 rows)', 'StudentTbl\n(2,988 rows)', 'CBP Hostel\n(1,606 rows)', 'CBP Mess\n(1,606 rows)'],
+    datasets: [
+      {
+        label: 'Complete Cells %',
+        data: [61, 87, 68, 63],
+        backgroundColor: '#86efac',
+        borderRadius: 6, borderWidth: 0,
+      },
+      {
+        label: 'Null Cells %',
+        data: [39, 13, 32, 37],
+        backgroundColor: '#fca5a5',
+        borderRadius: 6, borderWidth: 0,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { font: { size: 11 } } } },
+    scales: {
+      x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+      y: { stacked: true, grid: { color: GRID }, ticks: { font: { size: 10 }, callback: v => v + '%' }, max: 100 }
+    }
+  }
+});
+
+const feeNullData = [
+  { col: 'NoOfPapers', pct: 100 },
+  { col: 'CurrentSemester', pct: 99.9 },
+  { col: 'AppNo', pct: 96.6 },
+  { col: 'University', pct: 96.6 },
+  { col: 'Category', pct: 73.8 },
+  { col: 'OrderNo', pct: 69.2 },
+  { col: 'TransactionOrder', pct: 68.2 },
+  { col: 'TransactionDate', pct: 68.2 },
+  { col: 'DueAmount', pct: 87.5 },
+  { col: 'Duration', pct: 88.0 },
+];
+document.getElementById('feeNullBars').innerHTML = feeNullData.map(d => `
+  <div class="prog-item">
+    <div class="prog-label">
+      <span class="prog-name">${d.col}</span>
+      <span class="prog-val" style="color:${d.pct>80?'var(--rose)':d.pct>50?'var(--amber)':'var(--teal)'}">${d.pct}% NULL</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${d.pct}%;background:${d.pct>80?'var(--rose)':d.pct>50?'var(--amber)':'var(--teal)'}"></div></div>
+  </div>
+`).join('');
+</script>
+</body>
+</html>
